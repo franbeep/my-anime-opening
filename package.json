@@ -1,0 +1,26 @@
+{
+  "name": "my-anime-opening",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^1.5.0",
+    "axios": "^0.21.1",
+    "cors": "^2.8.5",
+    "file-saver": "^2.0.5",
+    "jikanjs": "^0.7.0",
+    "next": "10.0.9",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
+    "react-dropzone": "^11.3.1",
+    "react-github-corner": "^2.5.0",
+    "react-redux": "^7.2.2",
+    "rxjs": "^6.6.6",
+    "semantic-ui-css": "^2.4.1",
+    "semantic-ui-react": "^2.0.3"
+  }
+}

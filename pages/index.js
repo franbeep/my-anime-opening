@@ -65,7 +65,6 @@ function Home() {
   );
   fetchStreamDelayed.subscribe(async (f) => {
     f();
-    // dispatchFetchedCount({ type: "increment" });
   });
 
   const indexReducer = (state, action) => {
@@ -165,7 +164,6 @@ function Home() {
       <Divider horizontal>Or</Divider>
 
       <Input
-        // loading={searching}
         disabled={false}
         value={typedInput}
         onChange={(ev) => {
@@ -190,7 +188,6 @@ function Home() {
       style={{
         minHeight: "100vh",
         display: "flex",
-        // position: "relative",
         justifyContent: "center",
       }}
     >

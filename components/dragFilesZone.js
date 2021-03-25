@@ -10,7 +10,6 @@ function DragFilesZone({ callback }) {
       reader.onabort = () => console.log("File reading was aborted");
       reader.onerror = () => console.log("File reading has failed");
       reader.onload = () => {
-        // Do whatever you want with the file contents
         callback(reader.result);
       };
 

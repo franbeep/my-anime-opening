@@ -32,7 +32,7 @@ const animesAdapter = createEntityAdapter({
 });
 
 const initialState = animesAdapter.getInitialState({
-  filter: ["watching", "completed", "onhold", "dropped"], // no "plantowatch"
+  filter: ["watching", "completed", "onhold", "dropped", "plantowatch"],
   sorting: {
     value: "title",
     order: "asc",
@@ -106,12 +106,15 @@ const animesSlice = createSlice({
   initialState,
   reducers: {
     filterSet(state, action) {
-      // TODO
-      // state.animes.filter = action.filter;
+      const filter = action.payload.filter;
+      if (state.filter.includes(filter))
+        state.filter = state.filter.filter((item) => item != filter);
+      else state.filter.push(filter);
     },
     sortingSet(state, action) {
-      // TODO
-      // state.animes.sorting = action.sorting;
+      const sorting = action.payload.sorting;
+      const value = action.payload.value;
+      state.sorting[sorting] = value;
     },
   },
   extraReducers: {
@@ -179,6 +182,3 @@ export const selectAllAnimeMusics = createSelector(
 );
 
 export const selectDetailedCount = (state) => state.animes.detailed;
-
-// const selectFilters = (_, props) => props.filters;
-// const selectSort = (_, props) => props.sort;

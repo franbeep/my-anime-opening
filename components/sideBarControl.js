@@ -72,9 +72,7 @@ function SideBarControl({ children }) {
                 }
                 checked={filter.length == 5}
                 indeterminate={filter.length > 0 && filter.length < 5}
-                onChange={(ev) =>
-                  dispatch(filterSet({ filter: "all", value: ev.checked }))
-                }
+                onChange={(ev) => dispatch(filterSet({ filter: "all" }))}
               />
             </List.Item>
             <List.Item>
@@ -85,9 +83,7 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("watching")}
-                onChange={(ev) =>
-                  dispatch(filterSet({ filter: "watching", value: ev.checked }))
-                }
+                onChange={(ev) => dispatch(filterSet({ filter: "watching" }))}
               />
             </List.Item>
             <List.Item>
@@ -98,11 +94,7 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("completed")}
-                onChange={(ev) =>
-                  dispatch(
-                    filterSet({ filter: "completed", value: ev.checked })
-                  )
-                }
+                onChange={(ev) => dispatch(filterSet({ filter: "completed" }))}
               />
             </List.Item>
             <List.Item>
@@ -113,9 +105,7 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("onhold")}
-                onChange={(ev) =>
-                  dispatch(filterSet({ filter: "onhold", value: ev.checked }))
-                }
+                onChange={(ev) => dispatch(filterSet({ filter: "onhold" }))}
               />
             </List.Item>
             <List.Item>
@@ -126,9 +116,7 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("dropped")}
-                onChange={(ev) =>
-                  dispatch(filterSet({ filter: "dropped", value: ev.checked }))
-                }
+                onChange={(ev) => dispatch(filterSet({ filter: "dropped" }))}
               />
             </List.Item>
             <List.Item>
@@ -140,9 +128,7 @@ function SideBarControl({ children }) {
                 }
                 checked={filter.includes("plantowatch")}
                 onChange={(ev) =>
-                  dispatch(
-                    filterSet({ filter: "plantowatch", value: ev.checked })
-                  )
+                  dispatch(filterSet({ filter: "plantowatch" }))
                 }
               />
             </List.Item>
@@ -226,7 +212,6 @@ function SideBarControl({ children }) {
             basic
             color="blue"
             onClick={() => {
-              //
               var blob = new Blob([JSON.stringify(report)], {
                 type: "text/json",
               });

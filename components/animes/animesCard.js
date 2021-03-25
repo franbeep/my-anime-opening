@@ -1,6 +1,3 @@
-// TODO: Better visuals of the card
-// TODO: Use split by 'by' instead of regex
-
 import {
   Header,
   Label,

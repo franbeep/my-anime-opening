@@ -70,6 +70,23 @@ function MusicList({ list, header }) {
   );
 }
 
+const getTagColor = (status) => {
+  switch (status) {
+    case "watching":
+      return "green";
+    case "completed":
+      return "blue";
+    case "onhold":
+      return "orange";
+    case "dropped":
+      return "red";
+    case "plantowatch":
+      return "grey";
+    default:
+      return "black";
+  }
+};
+
 function AnimeCard({ anime, fetchDetails }) {
   const handleOnScreen = () => {};
 
@@ -90,6 +107,13 @@ function AnimeCard({ anime, fetchDetails }) {
           wrapped
           ui={false}
         />
+        <Label
+          color={getTagColor(anime.status)}
+          tag
+          style={{ position: "absolute", marginLeft: "0px" }}
+        >
+          {anime.status}
+        </Label>
         <Card.Content>
           <Card.Header>
             <Label>

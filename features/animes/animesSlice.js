@@ -20,10 +20,11 @@ const parseWatchingStatus = (val) => {
       return "onhold";
     case 4:
       return "dropped";
-    case 5:
+    case 6:
       return "plantowatch";
     default:
-      return "none";
+      console.log("parseWatchingStatus received value of " + val);
+      return "N/A";
   }
 };
 
@@ -32,12 +33,11 @@ const animesAdapter = createEntityAdapter({
 });
 
 const initialState = animesAdapter.getInitialState({
-  filter: ["watching", "completed", "onhold", "dropped", "plantowatch"],
+  filter: ["completed"],
   sorting: {
     value: "title",
     order: "asc",
   },
-  detailed: 0,
 });
 
 export const fetchAnimes = createAsyncThunk(
@@ -107,6 +107,18 @@ const animesSlice = createSlice({
   reducers: {
     filterSet(state, action) {
       const filter = action.payload.filter;
+      if (filter === "all") {
+        if (state.filter.length > 0) state.filter = [];
+        else
+          state.filter = [
+            "watching",
+            "completed",
+            "onhold",
+            "dropped",
+            "plantowatch",
+          ];
+        return;
+      }
       if (state.filter.includes(filter))
         state.filter = state.filter.filter((item) => item != filter);
       else state.filter.push(filter);
@@ -123,7 +135,6 @@ const animesSlice = createSlice({
     },
     [updateAnimeDetail.fulfilled]: (state, action) => {
       state.entities[action.payload.mal_id] = action.payload;
-      state.detailed += 1;
     },
   },
 });
@@ -181,4 +192,8 @@ export const selectAllAnimeMusics = createSelector(
       }, [])
 );
 
-export const selectDetailedCount = (state) => state.animes.detailed;
+export const selectDetailedCount = createSelector(
+  [selectAllAnimesFilteredSorted],
+  (animes) =>
+    animes.reduce((acc, anime) => (anime.fetched_detail ? acc + 1 : acc), 0)
+);

@@ -37,7 +37,7 @@ function SideBarControl({ children }) {
     if (animes.length > 0) {
       setVisible(true);
     } else {
-      setVisible(false);
+      // setVisible(false);
     }
   }, [animes]);
 

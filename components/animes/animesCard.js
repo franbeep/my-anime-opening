@@ -2,130 +2,88 @@
 // TODO: Use split by 'by' instead of regex
 
 import {
-  Container,
-  Input,
-  Button,
   Header,
   Label,
-  Grid,
-  Dimmer,
-  Loader,
-  Message,
   Card,
   Icon,
   Image,
-  Placeholder,
-  Popup,
   List,
-  Checkbox,
   Visibility,
 } from "semantic-ui-react";
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useDispatch } from "react-redux";
-import { linkAdded } from "../../features/animes/animesSlice";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-const parseMusicList = (list) => {
-  if (list) {
-    return list.map((item) => {
-      const regexIndex = /#?[0-9]*: /gi; // remove index
+import { selectLinkById } from "../../features/links/linksSlice";
+import { updateAnimeDetail } from "../../features/animes/animesSlice";
 
-      const parsedItem = item.replaceAll(regexIndex, "");
-      const [name, author] = parsedItem.split("by");
+function MusicList({ list, header }) {
+  if (list.length == 0)
+    return (
+      <>
+        <Header as="h3" dividing>
+          {header}
+        </Header>
+        <List relaxed>
+          <List.Item>
+            <List.Icon name="youtube" size="large" verticalAlign="middle" />
+            <List.Content>
+              <List.Header as={"span"}>
+                Searching...
+                <i className="spinner loading icon"></i>
+              </List.Header>
+            </List.Content>
+          </List.Item>
+        </List>
+      </>
+    );
 
-      return {
-        name: name,
-        author: author,
-        whole: parsedItem,
-      };
-    });
-  }
-  return [];
-};
-
-const MusicListItem = ({ name, author, whole }) => {
-  const [link, setLink] = useState(undefined);
-
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    setLink("#");
-    // axios
-    //   .get("/api/ytlink", {
-    //     params: {
-    //       music: whole,
-    //     },
-    //   })
-    //   .then((response) => {
-    //     //
-    //     const [first] = response.data.result;
-    //     const firstLinkURL = `https://www.youtube.com/watch?v=${first.videoId}`;
-    //     setLink(firstLinkURL);
-    //     // dispatch(linkAdded({ mal_id: anime.mal_id, link: firstLinkURL }));
-    //   })
-    //   .catch((error) => {
-    //     //
-    //     console.log(error);
-    //     console.log(error.message);
-    //   });
-  }, []);
-
-  return (
-    <List.Item>
-      <List.Icon name="youtube" size="large" verticalAlign="middle" />
-      <List.Content>
-        <List.Header as={link ? "a" : "span"} href={link} target={link}>
-          {/* {name.length > 30 ? name.substring(0, 29) + "..." : name} */}
-          {name}
-          {link ? "" : <i className="spinner loading icon"></i>}
-        </List.Header>
-      </List.Content>
-    </List.Item>
-  );
-};
-
-const musicDescription = (musicList, header) => {
   return (
     <>
       <Header as="h3" dividing>
         {header}
       </Header>
-      {musicList ? (
-        <List relaxed>
-          {parseMusicList(musicList).map((music, index) => {
-            return (
-              <MusicListItem
-                key={index}
-                {...music}
-                // name={music.name}
-                // author={music.author}
-                // whole={music.author}
-              />
-            );
-          })}
-        </List>
-      ) : (
-        <List relaxed>
-          <List.Item>
-            <List.Icon name="youtube" size="large" verticalAlign="middle" />
-            <List.Content>
-              <List.Header>
-                Searching... <i className="spinner loading icon"></i>
-              </List.Header>
-              {/* <List.Description as="a">Updated 10 mins ago</List.Description> */}
-            </List.Content>
-          </List.Item>
-        </List>
-      )}
+      <List relaxed>
+        {list.map((item, index) => {
+          const link = useSelector((state) =>
+            selectLinkById(state, item.whole)
+          );
+
+          return (
+            <List.Item key={index}>
+              <List.Icon name="youtube" size="large" verticalAlign="middle" />
+              <List.Content>
+                <List.Header
+                  as={link !== undefined ? "a" : "span"}
+                  href={link || ""}
+                  target="_blank"
+                >
+                  {item.music}
+                  {link !== undefined ? (
+                    ""
+                  ) : (
+                    <i className="spinner loading icon"></i>
+                  )}
+                </List.Header>
+              </List.Content>
+            </List.Item>
+          );
+        })}
+      </List>
     </>
   );
-};
+}
 
-const AnimeCard = ({ anime, fetchDetails }) => {
-  const handleOnScreen = () => {
-    console.log("handleOnScreen");
-    if (!anime.fetched_detail) fetchDetails(anime.mal_id);
-  };
+function AnimeCard({ anime, fetchDetails }) {
+  const handleOnScreen = () => {};
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (!anime.fetched_detail)
+      fetchDetails(() => {
+        dispatch(updateAnimeDetail(anime.mal_id));
+      });
+  }, []);
 
   return (
     <Visibility fireOnMount onOnScreen={handleOnScreen}>
@@ -150,24 +108,16 @@ const AnimeCard = ({ anime, fetchDetails }) => {
             </h2>
           </Card.Header>
           <Card.Meta>
-            {/* <span className="date">Started {anime.start_date || "Unknown"}</span>
-          <span className="date">Ended {anime.end_date || "Unknown"}</span> */}
             <span>Score: {anime.score || 0}</span>
           </Card.Meta>
           <Card.Description>
-            {musicDescription(anime.opening_themes, "Openings")}
-            {musicDescription(anime.ending_themes, "Endings")}
+            <MusicList list={anime.opening_themes} header={"Openings"} />
+            <MusicList list={anime.ending_themes} header={"Endings"} />
           </Card.Description>
         </Card.Content>
-        {/* <Card.Content extra>
-        <a>
-          <Icon name="user" />
-          22 Friends
-        </a>
-      </Card.Content> */}
       </Card>
     </Visibility>
   );
-};
+}
 
 export default AnimeCard;

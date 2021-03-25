@@ -7,28 +7,24 @@ function DragFilesZone({ callback }) {
     acceptedFiles.forEach((file) => {
       const reader = new FileReader();
 
-      reader.onabort = () => console.log("file reading was aborted");
-      reader.onerror = () => console.log("file reading has failed");
+      reader.onabort = () => console.log("File reading was aborted");
+      reader.onerror = () => console.log("File reading has failed");
       reader.onload = () => {
         // Do whatever you want with the file contents
-        console.log("HUAHUSHUAS");
         callback(reader.result);
       };
 
       reader.readAsArrayBuffer(file);
     });
   }, []);
-  // const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
-  // const onDrop = useCallback((acceptedFiles) => {
-  //   // Do something with the files
-  //   conso
-  // }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     maxFiles: 1,
     accept: "text/xml",
   });
+
+  // TODO: whole Segment as a dropzone
 
   return (
     <Segment placeholder>
@@ -43,8 +39,6 @@ function DragFilesZone({ callback }) {
           )}
         </Header>
       </div>
-
-      {/* <Button primary>Select File</Button> */}
     </Segment>
   );
 }

@@ -7,49 +7,30 @@ import {
   Input,
   Button,
   Header,
-  Label,
   Grid,
   Dimmer,
   Loader,
   Message,
-  Card,
-  Icon,
-  Image,
-  Placeholder,
-  Checkbox,
   Segment,
   Divider,
 } from "semantic-ui-react";
 import GithubCorner from "react-github-corner";
-import next from "next";
-import { sleep } from "../lib/utils";
-import { Subject, interval, of, concat } from "rxjs";
-import {
-  mergeMap,
-  map,
-  concatMap,
-  take,
-  distinct,
-  delay,
-} from "rxjs/operators";
+import next from "next"; // TODO: Review NextJS components
+import { Subject, of } from "rxjs";
+import { concatMap, delay } from "rxjs/operators";
 import { saveAs } from "file-saver";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
-  selectAllAnimes,
-  fetchUserAnimeInfo,
   fetchAnimes,
-  fetchAnimeDetail,
-  selectUser,
-  updateAnimeDetail,
-  selectSortedAnimesByStatus,
-  selectAllAnimesLinks,
-  selectAllAnimesMusics,
-  printAnimesMusic,
+  selectAllAnimesFilteredSorted,
+  selectAllAnimeLinks,
 } from "../features/animes/animesSlice";
-
+import { fetchUserInfo } from "../features/users/usersSlice";
 import AnimeCard from "../components/animes/animesCard";
 import DragFilesZone from "../components/dragFilesZone";
+import SideBarControl from "../components/sideBarControl";
+import { sleep } from "../lib/utils";
 
 // TODO: Added option to add anime through xml with or divider
 
@@ -68,6 +49,7 @@ function Home() {
     { count: -1, max: 0 }
   );
 
+  const links = useSelector(selectAllAnimeLinks);
   const dispatch = useDispatch();
 
   useEffect(async () => {
@@ -81,6 +63,10 @@ function Home() {
   const fetchStreamDelayed = fetchStream.pipe(
     concatMap((value) => of(value).pipe(delay(1000)))
   );
+  fetchStreamDelayed.subscribe(async (f) => {
+    f();
+    // dispatchFetchedCount({ type: "increment" });
+  });
 
   const indexReducer = (state, action) => {
     if (action.type == "next") {
@@ -88,16 +74,7 @@ function Home() {
       return (state += 1);
     }
   };
-
   const [actualIndex, dispatchIndex] = useReducer(indexReducer, 0);
-
-  fetchStreamDelayed.subscribe(async (id) => {
-    dispatch(updateAnimeDetail(id));
-    // dispatchFetchedCount({ type: "increment" });
-  });
-
-  // console.log("fetching details of anime " + id);
-  //                       dispatch(updateAnimeDetail(id));
 
   const evalExportFile = (file) => {
     console.log(file);
@@ -105,24 +82,31 @@ function Home() {
 
   const handleFetchUsername = async (ev) => {
     setloadingStatus("Fetching User info...");
-    const { payload: user } = await dispatch(fetchUserAnimeInfo(typedInput));
+    const { payload: user } = await dispatch(fetchUserInfo(typedInput));
+    await sleep(500);
     if (user === null) {
-      setloadingStatus("Invalid username, try again.");
+      setloadingStatus("Invalid username, reload the page to try again.");
     } else {
       dispatchIndex({ type: "next" });
+      const allAnime =
+        user.anime_stats.watching +
+        user.anime_stats.completed +
+        user.anime_stats.on_hold +
+        user.anime_stats.dropped +
+        user.anime_stats.plan_to_watch;
       let page = 1,
         animesFetched = 0;
-      while (animesFetched < user.anime_stats.completed) {
-        setloadingStatus(
-          `Hi ${user.username}, ${animesFetched}/${user.anime_stats.completed} animes loaded...`
-        );
+      while (animesFetched < allAnime) {
+        setloadingStatus(`${animesFetched}/${allAnime} Animes loaded...`);
         const data = await dispatch(
           fetchAnimes({
             username: typedInput,
-            option: "completed",
+            option: "all",
+            // option: "completed",
             page: page++,
           })
         );
+        await sleep(500);
         animesFetched += data.payload.length;
       }
 
@@ -218,50 +202,19 @@ function Home() {
           marginBottom: "10em",
         }}
       >
-        {useSelector(selectAllAnimes).map((anime) => {
+        {useSelector(selectAllAnimesFilteredSorted).map((anime) => {
           return (
             <Grid.Column key={anime.mal_id}>
               <AnimeCard
                 anime={anime}
-                fetchDetails={async (id) => {
-                  fetchStream.next(id);
+                fetchDetails={async (f) => {
+                  fetchStream.next(f);
                 }}
               />
             </Grid.Column>
           );
         })}
       </Grid>
-      <Segment
-        style={{
-          position: "fixed",
-          alignSelf: "flex-end",
-          bottom: "1em",
-          width: "100vw",
-        }}
-      >
-        <Button
-          color="red"
-          disabled
-          onClick={(ev) => {
-            dispatch(printAnimesMusic());
-          }}
-        >
-          Generate YT Playlist
-        </Button>
-        <Button
-          color="grey"
-          onClick={async (ev) => {
-            const animes = await dispatch(printAnimesMusic());
-            // var blob = new Blob(JSON.stringify(animes), { type: "text/plain;charset=utf-8" });
-            var blob = new Blob([JSON.stringify(animes.payload)], {
-              type: "application/json",
-            });
-            saveAs(blob, "animes.json");
-          }}
-        >
-          Report Music List
-        </Button>
-      </Segment>
     </Container>,
   ];
 
@@ -278,25 +231,27 @@ function Home() {
           rel="stylesheet"
         />
       </Head>
-      <GithubCorner
-        size="140"
-        href="https://github.com/franbeep/my-anime-opening"
-        style={{ zIndex: "100" }}
-      />
-      <main>
-        <Container>
-          {containerList.map((child, index) => {
-            return index == actualIndex ? (
-              <div className="fadeable" key={index}>
-                {child}
-              </div>
-            ) : (
-              ""
-            );
-          })}
-        </Container>
 
-        {/* dispatchIndex({ type: "next" }); */}
+      <main>
+        <SideBarControl>
+          <GithubCorner
+            size="140"
+            href="https://github.com/franbeep/my-anime-opening"
+            style={{ zIndex: "100" }}
+          />
+          <Container>
+            {containerList.map((child, index) => {
+              return index == actualIndex ? (
+                <div className="fadeable" key={index}>
+                  {child}
+                </div>
+              ) : (
+                ""
+              );
+            })}
+          </Container>
+          <div style={{ height: "100vh" }}></div>
+        </SideBarControl>
       </main>
       <Dimmer active={Boolean(loadingStatus)}>
         <Loader indeterminate>

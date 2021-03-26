@@ -21,6 +21,7 @@ This is just a memo for me.
 - Remove the extra space at the bottom
 - Generate playlist with user's permission (key)
 - Revamp the visuals
-- Bugs occur when change filter settings while fetching
+- ~~Bugs occur when change filter settings while fetching~~
+- **Very** slow when fetching large amount of anime (needs pagination)
 
 ### Thanks! ❤️

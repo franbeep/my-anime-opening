@@ -1,6 +1,6 @@
 // TODO: change everything back to function instead of arrow function
 
-import { useState, useEffect, useReducer } from "react";
+import { useState, useEffect, useReducer, useCallback } from "react";
 import Head from "next/head";
 import {
   Container,
@@ -24,60 +24,77 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchAnimes,
   selectAllAnimesFilteredSorted,
+  updateAnimeDetail,
   selectAllAnimeLinks,
+  selectAllAnimes,
 } from "../features/animes/animesSlice";
 import { fetchUserInfo } from "../features/users/usersSlice";
 import AnimeCard from "../components/animes/animesCard";
 import DragFilesZone from "../components/dragFilesZone";
 import SideBarControl from "../components/sideBarControl";
+import PaginationWrapper from "../components/paginationWrapper";
 import { sleep } from "../lib/utils";
 
-// TODO: Added option to add anime through xml with or divider
+const evalExportFile = (file) => {
+  console.log(file);
+};
 
+// TODO: Added option to add anime through xml with or divider
 function Home() {
   const [loadingStatus, setloadingStatus] = useState("");
   const [typedInput, setTypedInput] = useState("");
-  const [fetchedCount, dispatchFetchedCount] = useReducer(
+  // const [, updateState] = useState();
+  // const forceUpdate = useCallback(() => updateState({}), []);
+
+  const [fetchStream, dispatchFetchStream] = useReducer(
     (state, action) => {
       switch (action.type) {
-        case "set/max":
-          return { count: 0, max: action.payload.max };
-        case "increment":
-          return { ...state, count: state.count + 1 };
+        case "stream/unsubscribe/reset":
+          if (state.subscription != null) {
+            state.subscription.unsubscribe();
+          }
+        case "stream/reset":
+          const fetchStream = new Subject();
+          const fetchStreamDelayed = fetchStream.pipe(
+            concatMap((value) => of(value).pipe(delay(500)))
+          );
+          const subscription = fetchStreamDelayed.subscribe(async (f) => {
+            f();
+          });
+          return {
+            stream: fetchStream,
+            subscription,
+          };
+        case "stream/next":
+          if (state.stream != null) state.stream.next(action.payload);
       }
+      return state;
     },
-    { count: -1, max: 0 }
-  );
-
-  const links = useSelector(selectAllAnimeLinks);
-  const dispatch = useDispatch();
-
-  useEffect(async () => {
-    if (fetchedCount.count === fetchedCount.max) {
-      // await sleep(1000);
-      setloadingStatus("");
+    {
+      stream: null,
+      subscription: null,
     }
-  }, [fetchedCount]);
-
-  const fetchStream = new Subject();
-  const fetchStreamDelayed = fetchStream.pipe(
-    concatMap((value) => of(value).pipe(delay(1000)))
   );
-  fetchStreamDelayed.subscribe(async (f) => {
-    f();
-  });
-
-  const indexReducer = (state, action) => {
+  const [actualIndex, dispatchIndex] = useReducer((state, action) => {
     if (action.type == "next") {
-      console.log("incremented state to " + (state + 1));
       return (state += 1);
     }
-  };
-  const [actualIndex, dispatchIndex] = useReducer(indexReducer, 0);
+  }, 0);
 
-  const evalExportFile = (file) => {
-    console.log(file);
-  };
+  const filteredAnimes = useSelector(selectAllAnimesFilteredSorted);
+  const dispatch = useDispatch();
+
+  // const fetchStream = new Subject();
+  // const fetchStreamDelayed = fetchStream.pipe(
+  //   concatMap((value) => of(value).pipe(delay(1000)))
+  // );
+  // fetchStreamDelayed.subscribe(async (f) => {
+  //   f();
+  // });
+
+  useEffect(() => {
+    dispatchFetchStream({ type: "stream/reset" });
+  }, []);
 
   const handleFetchUsername = async (ev) => {
     setloadingStatus("Fetching User info...");
@@ -101,27 +118,14 @@ function Home() {
           fetchAnimes({
             username: typedInput,
             option: "all",
-            // option: "completed",
             page: page++,
           })
         );
         await sleep(500);
         animesFetched += data.payload.length;
       }
-
-      // setloadingStatus("Done!");
       setloadingStatus("");
-
-      // dispatchFetchedCount({
-      //   type: "set/max",
-      //   payload: { max: user.anime_stats.completed },
-      // }); // start counting fetches
-
-      // dimmer
-      // show new container
     }
-
-    // TODO: add option to filter the "all" accordingly the checkboxes
   };
 
   const containerList = [
@@ -191,27 +195,31 @@ function Home() {
         justifyContent: "center",
       }}
     >
-      <Grid
+      {/* <Grid
         columns={5}
         stackable
         style={{
           margin: "1em",
           marginBottom: "10em",
         }}
-      >
+      > */}
+      <PaginationWrapper>
         {useSelector(selectAllAnimesFilteredSorted).map((anime) => {
           return (
-            <Grid.Column key={anime.mal_id}>
-              <AnimeCard
-                anime={anime}
-                fetchDetails={async (f) => {
-                  fetchStream.next(f);
-                }}
-              />
-            </Grid.Column>
+            // <Grid.Column >
+
+            // </Grid.Column>
+            <AnimeCard
+              key={anime.mal_id}
+              anime={anime}
+              fetchDetails={async (f) => {
+                fetchStream.stream.next(f);
+              }}
+            />
           );
         })}
-      </Grid>
+      </PaginationWrapper>
+      {/* </Grid> */}
     </Container>,
   ];
 
@@ -221,7 +229,7 @@ function Home() {
         <title>
           My Anime Opening {loadingStatus ? `- ${loadingStatus}` : ""}
         </title>
-        <link rel="icon" href="/favicon.ico" />
+        {/* <link rel="icon" href="/favicon.ico" /> */}
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         <link
           href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
@@ -230,7 +238,19 @@ function Home() {
       </Head>
 
       <main>
-        <SideBarControl>
+        <SideBarControl
+          fetchOne={(anime) => {
+            dispatchFetchStream({
+              type: "stream/next",
+              payload: () => {
+                dispatch(updateAnimeDetail(anime.mal_id));
+              },
+            });
+          }}
+          fetchReset={() => {
+            dispatchFetchStream({ type: "stream/unsubscribe/reset" });
+          }}
+        >
           <GithubCorner
             size="140"
             href="https://github.com/franbeep/my-anime-opening"
@@ -251,11 +271,7 @@ function Home() {
         </SideBarControl>
       </main>
       <Dimmer active={Boolean(loadingStatus)}>
-        <Loader indeterminate>
-          {fetchedCount.count > 0
-            ? `Fetching ${fetchedCount.count}/${fetchedCount.max} anime detail...`
-            : loadingStatus}
-        </Loader>
+        <Loader indeterminate>{loadingStatus}</Loader>
       </Dimmer>
     </>
   );

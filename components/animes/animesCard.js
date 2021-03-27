@@ -92,12 +92,12 @@ function AnimeCard({ anime, fetchDetails }) {
 
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (!anime.fetched_detail)
-      fetchDetails(() => {
-        dispatch(updateAnimeDetail(anime.mal_id));
-      });
-  }, []);
+  // useEffect(() => {
+  //   if (!anime.fetched_detail)
+  //     fetchDetails(() => {
+  //       dispatch(updateAnimeDetail(anime.mal_id));
+  //     });
+  // }, []);
 
   return (
     <Visibility fireOnMount onOnScreen={handleOnScreen}>

@@ -23,7 +23,6 @@ const parseWatchingStatus = (val) => {
     case 6:
       return "plantowatch";
     default:
-      console.log("parseWatchingStatus received value of " + val);
       return "N/A";
   }
 };
@@ -38,6 +37,7 @@ const initialState = animesAdapter.getInitialState({
     value: "title",
     order: "asc",
   },
+  error: false,
 });
 
 export const fetchAnimes = createAsyncThunk(
@@ -62,6 +62,7 @@ export const fetchAnimes = createAsyncThunk(
         }));
       })
       .catch((error) => {
+        dispatch(errorSet("set"));
         throw new Error("Failed fetching anime list");
       });
   }
@@ -69,7 +70,7 @@ export const fetchAnimes = createAsyncThunk(
 
 export const updateAnimeDetail = createAsyncThunk(
   "animes/updateAnimeDetail",
-  async (animeId, { getState }) => {
+  async (animeId, { dispatch, getState }) => {
     const anime = selectAnimeById(getState(), animeId);
 
     const parseMusic = (item, index) => {
@@ -96,6 +97,7 @@ export const updateAnimeDetail = createAsyncThunk(
         };
       })
       .catch((error) => {
+        dispatch(errorSet("set"));
         throw new Error("Failed fetching anime detail");
       });
   }
@@ -128,13 +130,29 @@ const animesSlice = createSlice({
       const value = action.payload.value;
       state.sorting[sorting] = value;
     },
+    errorSet(state, action) {
+      switch (action.payload.type) {
+        case "set":
+          state.error = true;
+        case "clear":
+          state.error = false;
+        default:
+          state.error = true;
+      }
+    },
   },
   extraReducers: {
     [fetchAnimes.fulfilled]: (state, action) => {
       animesAdapter.addMany(state, action.payload);
     },
+    [fetchAnimes.rejected]: (state, action) => {
+      //
+    },
     [updateAnimeDetail.fulfilled]: (state, action) => {
       state.entities[action.payload.mal_id] = action.payload;
+    },
+    [updateAnimeDetail.rejected]: (state, action) => {
+      state.error = true;
     },
   },
 });
@@ -151,6 +169,7 @@ export const {
 
 export const selectFilter = (state) => state.animes.filter;
 export const selectSorting = (state) => state.animes.sorting;
+export const selectError = (state) => state.animes.error;
 
 export const selectAllAnimesFilteredSorted = createSelector(
   [selectAllAnimes, selectFilter, selectSorting],

@@ -57,10 +57,9 @@ export const {
 
 export const selectLinkByIdOrNull = createSelector(selectLinkById, (link) => {
   if (link === undefined) {
-    console.log("link is undefined");
+    // TODO
   } else {
-    console.log("selectLinkByIdOrNull");
-    console.log(`link: '${link}'  - length: ${link.length}`);
+    // TODO
   }
   return null;
 });

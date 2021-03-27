@@ -511,13 +511,6 @@ create-hmac@^1.1.0, create-hmac@^1.1.4, create-hmac@^1.1.7:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
-cross-fetch@^3.0.0:
-  version "3.1.2"
-  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.2.tgz#ee0c2f18844c4fde36150c2a4ddc068d20c1bc41"
-  integrity sha512-+JhD65rDNqLbGmB3Gzs3HrEKC0aQnD+XA3SY6RjgkF88jV2q5cTc5+CwxlS3sdmLk98gpPt5CF9XRnPdlxZe6w==
-  dependencies:
-    node-fetch "2.6.1"
-
 crypto-browserify@3.12.0, crypto-browserify@^3.11.0:
   version "3.12.0"
   resolved "https://registry.yarnpkg.com/crypto-browserify/-/crypto-browserify-3.12.0.tgz#396cf9f3137f03e4b8e532c58f698254e00f80ec"
@@ -865,13 +858,6 @@ jest-worker@24.9.0:
   dependencies:
     merge-stream "^2.0.0"
     supports-color "^6.1.0"
-
-jikanjs@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/jikanjs/-/jikanjs-0.7.0.tgz#ffcc749f42e5487a4f1a7c7e9e3985313a792199"
-  integrity sha512-q5OkujDzDRmPRcVgK2xJNhpXGLygWVr/C35IkBUBs3cpmnAKs4wyhpfLalT5Em2mFTa5ZOg5PSW4GsJumWDK9Q==
-  dependencies:
-    cross-fetch "^3.0.0"
 
 jquery@x.*:
   version "3.6.0"

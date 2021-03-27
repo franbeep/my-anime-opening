@@ -4,6 +4,7 @@ import {
   selectFilter,
   selectSorting,
   selectAllAnimeMusics,
+  selectError,
   filterSet,
   sortingSet,
 } from "../features/animes/animesSlice";
@@ -11,6 +12,8 @@ import {
   Icon,
   Button,
   Menu,
+  Label,
+  Grid,
   List,
   Sidebar,
   Checkbox,
@@ -19,25 +22,45 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useState, useEffect } from "react";
 import { saveAs } from "file-saver";
+import { Subject, interval } from "rxjs";
+import { debounce } from "rxjs/operators";
 
-function SideBarControl({ children }) {
+const changeAnimeStream = new Subject();
+const changeAnimeStreamDebounced = changeAnimeStream.pipe(
+  debounce(() => interval(5000))
+);
+
+function SideBarControl({ fetchOne, fetchReset, children }) {
   const [visible, setVisible] = useState(false);
 
   const report = useSelector(selectAllAnimeMusics);
-
   const animes = useSelector(selectAllAnimesFilteredSorted);
   const detailedCount = useSelector(selectDetailedCount);
   const totalCount = animes.length;
   const filter = useSelector(selectFilter);
   const sorting = useSelector(selectSorting);
+  const fetchingError = useSelector(selectError);
 
   const dispatch = useDispatch();
 
   useEffect(() => {
+    changeAnimeStreamDebounced.subscribe((animes) => {
+      animes
+        .filter((anime) => anime.fetched_detail == false)
+        .forEach((anime) => {
+          fetchOne(anime);
+        });
+    });
+  }, []);
+
+  useEffect(() => {
+    fetchReset();
     if (animes.length > 0) {
       setVisible(true);
+      changeAnimeStream.next(animes);
     } else {
       // setVisible(false);
+      changeAnimeStream.next([]);
     }
   }, [animes]);
 
@@ -60,6 +83,16 @@ function SideBarControl({ children }) {
           {detailedCount < totalCount
             ? `Feching... ${detailedCount}/${totalCount}`
             : "Completed"}
+          {fetchingError && (
+            <Button
+              color="red"
+              size="mini"
+              style={{ margin: "0 1em" }}
+              onClick={fetchReset}
+            >
+              Retry
+            </Button>
+          )}
         </Menu.Item>
 
         <Menu.Item>
@@ -72,7 +105,10 @@ function SideBarControl({ children }) {
                 }
                 checked={filter.length == 5}
                 indeterminate={filter.length > 0 && filter.length < 5}
-                onChange={(ev) => dispatch(filterSet({ filter: "all" }))}
+                onChange={(ev) => {
+                  fetchReset();
+                  dispatch(filterSet({ filter: "all" }));
+                }}
               />
             </List.Item>
             <List.Item>
@@ -83,7 +119,10 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("watching")}
-                onChange={(ev) => dispatch(filterSet({ filter: "watching" }))}
+                onChange={(ev) => {
+                  fetchReset();
+                  dispatch(filterSet({ filter: "watching" }));
+                }}
               />
             </List.Item>
             <List.Item>
@@ -94,7 +133,10 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("completed")}
-                onChange={(ev) => dispatch(filterSet({ filter: "completed" }))}
+                onChange={(ev) => {
+                  fetchReset();
+                  dispatch(filterSet({ filter: "completed" }));
+                }}
               />
             </List.Item>
             <List.Item>
@@ -105,7 +147,10 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("onhold")}
-                onChange={(ev) => dispatch(filterSet({ filter: "onhold" }))}
+                onChange={(ev) => {
+                  fetchReset();
+                  dispatch(filterSet({ filter: "onhold" }));
+                }}
               />
             </List.Item>
             <List.Item>
@@ -116,7 +161,10 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("dropped")}
-                onChange={(ev) => dispatch(filterSet({ filter: "dropped" }))}
+                onChange={(ev) => {
+                  fetchReset();
+                  dispatch(filterSet({ filter: "dropped" }));
+                }}
               />
             </List.Item>
             <List.Item>
@@ -127,9 +175,10 @@ function SideBarControl({ children }) {
                   </label>
                 }
                 checked={filter.includes("plantowatch")}
-                onChange={(ev) =>
-                  dispatch(filterSet({ filter: "plantowatch" }))
-                }
+                onChange={(ev) => {
+                  fetchReset();
+                  dispatch(filterSet({ filter: "plantowatch" }));
+                }}
               />
             </List.Item>
           </List>
@@ -223,6 +272,7 @@ function SideBarControl({ children }) {
         </Menu.Item>
       </Sidebar>
 
+      {/* Removed 100vh here */}
       <Sidebar.Pusher>{children}</Sidebar.Pusher>
     </Sidebar.Pushable>
   );

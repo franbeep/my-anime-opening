@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectLinkById } from "../../features/links/linksSlice";
 import { updateAnimeDetail } from "../../features/animes/animesSlice";
 
-function MusicList({ list, header }) {
+function MusicList({ processing, list, header }) {
   if (list.length == 0)
     return (
       <>
@@ -25,8 +25,14 @@ function MusicList({ list, header }) {
             <List.Icon name="youtube" size="large" verticalAlign="middle" />
             <List.Content>
               <List.Header as={"span"}>
-                Searching...
-                <i className="spinner loading icon"></i>
+                {processing ? (
+                  <>
+                    Searching...
+                    <i className="spinner loading icon"></i>
+                  </>
+                ) : (
+                  <>No songs found</>
+                )}
               </List.Header>
             </List.Content>
           </List.Item>
@@ -50,16 +56,16 @@ function MusicList({ list, header }) {
               <List.Icon name="youtube" size="large" verticalAlign="middle" />
               <List.Content>
                 <List.Header
-                  as={link !== undefined ? "a" : "span"}
+                  as={link ? "a" : "span"}
                   href={link || ""}
                   target="_blank"
                 >
                   {item.music}
-                  {link !== undefined ? (
+                  {/* {link !== undefined ? (
                     ""
                   ) : (
                     <i className="spinner loading icon"></i>
-                  )}
+                  )} */}
                 </List.Header>
               </List.Content>
             </List.Item>
@@ -87,17 +93,25 @@ const getTagColor = (status) => {
   }
 };
 
+const getStatusTagText = (status) => {
+  switch (status) {
+    case "watching":
+      return "Watching";
+    case "completed":
+      return "Completed";
+    case "onhold":
+      return "On Hold";
+    case "dropped":
+      return "Dropped";
+    case "plantowatch":
+      return "Plan to Watch";
+    default:
+      return "N/A";
+  }
+};
+
 function AnimeCard({ anime, fetchDetails }) {
   const handleOnScreen = () => {};
-
-  const dispatch = useDispatch();
-
-  // useEffect(() => {
-  //   if (!anime.fetched_detail)
-  //     fetchDetails(() => {
-  //       dispatch(updateAnimeDetail(anime.mal_id));
-  //     });
-  // }, []);
 
   return (
     <Visibility fireOnMount onOnScreen={handleOnScreen}>
@@ -112,14 +126,14 @@ function AnimeCard({ anime, fetchDetails }) {
           tag
           style={{ position: "absolute", marginLeft: "0px" }}
         >
-          {anime.status}
+          {getStatusTagText(anime.status)}
         </Label>
         <Card.Content>
           <Card.Header>
             <Label>
               <a href={anime.url}>
                 <Icon name="hashtag" />
-                {anime.mal_id}
+                {anime.id}
               </a>
             </Label>{" "}
             <h2>
@@ -132,8 +146,16 @@ function AnimeCard({ anime, fetchDetails }) {
             <span>Score: {anime.score || 0}</span>
           </Card.Meta>
           <Card.Description>
-            <MusicList list={anime.opening_themes} header={"Openings"} />
-            <MusicList list={anime.ending_themes} header={"Endings"} />
+            <MusicList
+              processing={!anime.fetched_detail}
+              list={anime.opening_themes}
+              header={"Openings"}
+            />
+            <MusicList
+              processing={!anime.fetched_detail}
+              list={anime.ending_themes}
+              header={"Endings"}
+            />
           </Card.Description>
         </Card.Content>
       </Card>

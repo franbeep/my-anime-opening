@@ -10,7 +10,8 @@ import {
   Checkbox,
   Sticky,
 } from "semantic-ui-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import useBreakpoints from "../hooks/useBreakpoint";
 
 function PaginationWrapper({ children }) {
   const [page, setPage] = useState(1);
@@ -21,16 +22,42 @@ function PaginationWrapper({ children }) {
     return children.slice(offset, offset + size);
   };
 
+  const breakpoints = {
+    sm: 1024,
+    md: 1280,
+    lg: 1920,
+    xl: 2560,
+    xxl: 3840,
+  };
+  const breakpointSize = useBreakpoints(breakpoints);
+
+  const columnSize = useMemo(() => {
+    switch (breakpointSize) {
+      case "xxl":
+        return 5;
+      case "xl":
+        return 4;
+      case "lg":
+        return 3;
+      case "md":
+        return 2;
+      case "sm":
+        return 1;
+      default:
+        return 1;
+    }
+  }, [breakpointSize]);
+
   return (
     <Grid
       columns={1}
       style={{
         margin: "1em",
-        marginBottom: "10em",
+        width: "100%",
       }}
     >
       <Grid.Column>
-        <Grid columns={5}>
+        <Grid columns={columnSize}>
           {paginatedChildren().map((anime, index) => (
             <Grid.Column key={index}>{anime}</Grid.Column>
           ))}

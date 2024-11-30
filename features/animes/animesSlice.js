@@ -8,31 +8,12 @@ import axios from "axios";
 
 import { selectAllLinks } from "../links/linksSlice";
 
-const apiPath = "https://api.jikan.moe/v3";
-
-const parseWatchingStatus = (val) => {
-  switch (val) {
-    case 1:
-      return "watching";
-    case 2:
-      return "completed";
-    case 3:
-      return "onhold";
-    case 4:
-      return "dropped";
-    case 6:
-      return "plantowatch";
-    default:
-      return "N/A";
-  }
-};
-
 const animesAdapter = createEntityAdapter({
-  selectId: (anime) => anime.mal_id,
+  selectId: (anime) => anime.id,
 });
 
 const initialState = animesAdapter.getInitialState({
-  filter: ["completed"],
+  filter: ["watching", "completed", "onhold", "dropped", "plantowatch"],
   sorting: {
     value: "title",
     order: "asc",
@@ -42,27 +23,17 @@ const initialState = animesAdapter.getInitialState({
 
 export const fetchAnimes = createAsyncThunk(
   "animes/fetchAnimes",
-  async ({ username, option, page }) => {
+  async ({ username, take, offset }, {}) => {
     return await axios
-      .get(`${apiPath}/user/${username}/animelist/${option}?page=${page}`)
-      .then(({ data }) => {
-        return data.anime.map((anime) => ({
-          mal_id: anime.mal_id,
-          title: anime.title,
-          url: anime.url,
-          image_url: anime.image_url,
-          status: parseWatchingStatus(anime.watching_status),
-          type: anime.type,
-          score: anime.score,
-          start_date: anime.start_date,
-          end_date: anime.end_date,
-          opening_themes: [],
-          ending_themes: [],
-          fetched_detail: false,
-        }));
+      .get("/api/mal/list", {
+        params: {
+          username,
+          take,
+          offset,
+        },
       })
-      .catch((error) => {
-        dispatch(errorSet("set"));
+      .then(({ data }) => data.result)
+      .catch(() => {
         throw new Error("Failed fetching anime list");
       });
   }
@@ -73,30 +44,18 @@ export const updateAnimeDetail = createAsyncThunk(
   async (animeId, { dispatch, getState }) => {
     const anime = selectAnimeById(getState(), animeId);
 
-    const parseMusic = (item, index) => {
-      const parsedItem = item
-        .replaceAll(/#?[0-9]*:/gi, "") // remove index
-        .replaceAll(/\"/gi, "") // remove quotes}
-        .trim();
-      const [music, author] = parsedItem.split(" by ");
-      return {
-        music,
-        author,
-        whole: parsedItem,
-      };
-    };
-
     return await axios
-      .get(`${apiPath}/anime/${animeId}`)
-      .then(({ data }) => {
-        return {
-          ...anime,
-          opening_themes: data.opening_themes.map(parseMusic),
-          ending_themes: data.ending_themes.map(parseMusic),
-          fetched_detail: true,
-        };
+      .get("/api/mal/detail", {
+        params: {
+          id: animeId,
+        },
       })
-      .catch((error) => {
+      .then(({ data }) => ({
+        ...anime,
+        ...data.result,
+        fetched_detail: true,
+      }))
+      .catch(() => {
         dispatch(errorSet("set"));
         throw new Error("Failed fetching anime detail");
       });
@@ -149,7 +108,7 @@ const animesSlice = createSlice({
       //
     },
     [updateAnimeDetail.fulfilled]: (state, action) => {
-      state.entities[action.payload.mal_id] = action.payload;
+      state.entities[action.payload.id] = action.payload;
     },
     [updateAnimeDetail.rejected]: (state, action) => {
       state.error = true;

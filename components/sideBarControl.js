@@ -27,7 +27,7 @@ import { debounce } from "rxjs/operators";
 
 const changeAnimeStream = new Subject();
 const changeAnimeStreamDebounced = changeAnimeStream.pipe(
-  debounce(() => interval(5000))
+  debounce(() => interval(500))
 );
 
 function SideBarControl({ fetchOne, fetchReset, children }) {
@@ -59,7 +59,6 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
       setVisible(true);
       changeAnimeStream.next(animes);
     } else {
-      // setVisible(false);
       changeAnimeStream.next([]);
     }
   }, [animes]);
@@ -81,7 +80,7 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
         <Menu.Item>
           Status:{" "}
           {detailedCount < totalCount
-            ? `Feching... ${detailedCount}/${totalCount}`
+            ? `Fetching details... ${detailedCount}/${totalCount}`
             : "Completed"}
           {fetchingError && (
             <Button

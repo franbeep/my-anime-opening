@@ -28,7 +28,6 @@ import {
   selectAllAnimeLinks,
   selectAllAnimes,
 } from "../features/animes/animesSlice";
-import { fetchUserInfo } from "../features/users/usersSlice";
 import AnimeCard from "../components/animes/animesCard";
 import DragFilesZone from "../components/dragFilesZone";
 import SideBarControl from "../components/sideBarControl";
@@ -43,8 +42,6 @@ const evalExportFile = (file) => {
 function Home() {
   const [loadingStatus, setloadingStatus] = useState("");
   const [typedInput, setTypedInput] = useState("");
-  // const [, updateState] = useState();
-  // const forceUpdate = useCallback(() => updateState({}), []);
 
   const [fetchStream, dispatchFetchStream] = useReducer(
     (state, action) => {
@@ -54,15 +51,15 @@ function Home() {
             state.subscription.unsubscribe();
           }
         case "stream/reset":
-          const fetchStream = new Subject();
-          const fetchStreamDelayed = fetchStream.pipe(
+          const _fetchStream = new Subject();
+          const _fetchStreamDelayed = _fetchStream.pipe(
             concatMap((value) => of(value).pipe(delay(500)))
           );
-          const subscription = fetchStreamDelayed.subscribe(async (f) => {
+          const subscription = _fetchStreamDelayed.subscribe((f) => {
             f();
           });
           return {
-            stream: fetchStream,
+            stream: _fetchStreamDelayed,
             subscription,
           };
         case "stream/next":
@@ -81,16 +78,7 @@ function Home() {
     }
   }, 0);
 
-  const filteredAnimes = useSelector(selectAllAnimesFilteredSorted);
   const dispatch = useDispatch();
-
-  // const fetchStream = new Subject();
-  // const fetchStreamDelayed = fetchStream.pipe(
-  //   concatMap((value) => of(value).pipe(delay(1000)))
-  // );
-  // fetchStreamDelayed.subscribe(async (f) => {
-  //   f();
-  // });
 
   useEffect(() => {
     dispatchFetchStream({ type: "stream/reset" });
@@ -98,34 +86,35 @@ function Home() {
 
   const handleFetchUsername = async (ev) => {
     setloadingStatus("Fetching User info...");
-    const { payload: user } = await dispatch(fetchUserInfo(typedInput));
     await sleep(500);
-    if (user === null) {
-      setloadingStatus("Invalid username, reload the page to try again.");
-    } else {
-      dispatchIndex({ type: "next" });
-      const allAnime =
-        user.anime_stats.watching +
-        user.anime_stats.completed +
-        user.anime_stats.on_hold +
-        user.anime_stats.dropped +
-        user.anime_stats.plan_to_watch;
-      let page = 1,
-        animesFetched = 0;
-      while (animesFetched < allAnime) {
-        setloadingStatus(`${animesFetched}/${allAnime} Animes loaded...`);
-        const data = await dispatch(
-          fetchAnimes({
-            username: typedInput,
-            option: "all",
-            page: page++,
-          })
-        );
-        await sleep(500);
-        animesFetched += data.payload.length;
-      }
+    if (!typedInput) {
       setloadingStatus("");
+      return;
     }
+
+    dispatchIndex({ type: "next" });
+    let animesFetched = 0,
+      lastFetchedAmount = 0;
+
+    do {
+      setloadingStatus(`${animesFetched} Animes loaded...`);
+      const data = await dispatch(
+        fetchAnimes({
+          username: typedInput,
+          take: 500,
+          offset: animesFetched,
+        })
+      );
+      await sleep(500);
+
+      animesFetched += data.payload.length;
+      lastFetchedAmount = data.payload.length;
+    } while (lastFetchedAmount);
+
+    setloadingStatus(`${animesFetched} Animes loaded...`);
+    await sleep(500);
+
+    setloadingStatus("");
   };
 
   const containerList = [
@@ -193,24 +182,14 @@ function Home() {
         minHeight: "100vh",
         display: "flex",
         justifyContent: "center",
+        width: "50%",
       }}
     >
-      {/* <Grid
-        columns={5}
-        stackable
-        style={{
-          margin: "1em",
-          marginBottom: "10em",
-        }}
-      > */}
       <PaginationWrapper>
         {useSelector(selectAllAnimesFilteredSorted).map((anime) => {
           return (
-            // <Grid.Column >
-
-            // </Grid.Column>
             <AnimeCard
-              key={anime.mal_id}
+              key={anime.id}
               anime={anime}
               fetchDetails={async (f) => {
                 fetchStream.stream.next(f);
@@ -219,7 +198,6 @@ function Home() {
           );
         })}
       </PaginationWrapper>
-      {/* </Grid> */}
     </Container>,
   ];
 
@@ -243,7 +221,7 @@ function Home() {
             dispatchFetchStream({
               type: "stream/next",
               payload: () => {
-                dispatch(updateAnimeDetail(anime.mal_id));
+                dispatch(updateAnimeDetail(anime.id));
               },
             });
           }}
@@ -256,17 +234,15 @@ function Home() {
             href="https://github.com/franbeep/my-anime-opening"
             style={{ zIndex: "100" }}
           />
-          <Container>
-            {containerList.map((child, index) => {
-              return index == actualIndex ? (
-                <div className="fadeable" key={index}>
-                  {child}
-                </div>
-              ) : (
-                ""
-              );
-            })}
-          </Container>
+          {containerList.map((child, index) => {
+            return index == actualIndex ? (
+              <div className="fadeable" key={index}>
+                {child}
+              </div>
+            ) : (
+              ""
+            );
+          })}
           <div style={{ height: "100vh" }}></div>
         </SideBarControl>
       </main>

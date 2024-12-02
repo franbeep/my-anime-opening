@@ -4,23 +4,19 @@ import {
   selectFilter,
   selectSorting,
   selectAllAnimeMusics,
-  selectError,
   filterSet,
   sortingSet,
+  updateAnimeDetail,
 } from "../features/animes/animesSlice";
 import {
-  Icon,
-  Button,
-  Menu,
-  Label,
-  Grid,
-  List,
-  Sidebar,
-  Checkbox,
-  Sticky,
-} from "semantic-ui-react";
+  selectAllLinksFiltered,
+  fetchYoutubeMusicLink,
+  selectLinksError,
+  setLinksError,
+} from "../features/links/linksSlice";
+import { Button, Menu, List, Sidebar, Checkbox } from "semantic-ui-react";
 import { useDispatch, useSelector } from "react-redux";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { saveAs } from "file-saver";
 import { Subject, interval } from "rxjs";
 import { debounce } from "rxjs/operators";
@@ -30,28 +26,66 @@ const changeAnimeStreamDebounced = changeAnimeStream.pipe(
   debounce(() => interval(500))
 );
 
+const linksStream = new Subject();
+const linksStreamDebounced = linksStream.pipe(debounce(() => interval(500)));
+
 function SideBarControl({ fetchOne, fetchReset, children }) {
   const [visible, setVisible] = useState(false);
+  const [fetchingLinks, setFetchingLinks] = useState(false);
 
   const report = useSelector(selectAllAnimeMusics);
   const animes = useSelector(selectAllAnimesFilteredSorted);
+  const links = useSelector(selectAllLinksFiltered);
   const detailedCount = useSelector(selectDetailedCount);
   const totalCount = animes.length;
   const filter = useSelector(selectFilter);
   const sorting = useSelector(selectSorting);
-  const fetchingError = useSelector(selectError);
+  const hasLinksError = useSelector(selectLinksError);
 
   const dispatch = useDispatch();
+
+  const fetchTYLinks = async () => setFetchingLinks(true);
+
+  useEffect(() => {
+    if (hasLinksError) {
+      dispatch(setLinksError({ type: "clear" }));
+      setFetchingLinks(false);
+    }
+  }, [hasLinksError]);
 
   useEffect(() => {
     changeAnimeStreamDebounced.subscribe((animes) => {
       animes
         .filter((anime) => anime.fetched_detail == false)
         .forEach((anime) => {
-          fetchOne(anime);
+          fetchOne(updateAnimeDetail(anime.id));
         });
     });
   }, []);
+
+  useEffect(() => {
+    linksStreamDebounced.subscribe((animes) => {
+      animes.forEach((anime) => {
+        const themes = [...anime.opening_themes, ...anime.ending_themes];
+
+        themes.forEach((theme) => {
+          fetchOne(fetchYoutubeMusicLink(theme.whole));
+        });
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    fetchReset();
+    if (!fetchingLinks) return;
+
+    if (detailedCount < totalCount || !animes.length) {
+      setFetchingLinks(false);
+      return;
+    }
+
+    linksStream.next(animes);
+  }, [fetchingLinks, animes, detailedCount, totalCount]);
 
   useEffect(() => {
     fetchReset();
@@ -63,36 +97,50 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
     }
   }, [animes]);
 
+  const statusMessage = useMemo(() => {
+    if (detailedCount < totalCount)
+      return (
+        <>
+          {`Fetching details... ${detailedCount}/${totalCount}`}
+          <i className="spinner loading icon"></i>
+        </>
+      );
+    if (fetchingLinks)
+      return (
+        <>
+          {"Fetching links..."}
+          <i className="spinner loading icon"></i>
+        </>
+      );
+    return "Idle";
+  }, [detailedCount, totalCount, fetchingLinks]);
+
   return (
     <Sidebar.Pushable style={{ transform: "none" }}>
       <Sidebar
         as={Menu}
         animation="overlay"
-        // icon="labeled"
         inverted
         vertical
         visible={visible}
         className={"fixed"}
         style={{ position: "fixed" }}
-        // style={{ height: "100vh !important", top: "0" }}
-        // width="thin"
       >
-        <Menu.Item>
-          Status:{" "}
-          {detailedCount < totalCount
-            ? `Fetching details... ${detailedCount}/${totalCount}`
-            : "Completed"}
-          {fetchingError && (
+        <Menu.Item>Status: {statusMessage}</Menu.Item>
+
+        {detailedCount >= totalCount && (
+          <Menu.Item>
             <Button
-              color="red"
+              disabled={fetchingLinks}
+              color="youtube"
               size="mini"
               style={{ margin: "0 1em" }}
-              onClick={fetchReset}
+              onClick={fetchTYLinks}
             >
-              Retry
+              Fetch YT Links
             </Button>
-          )}
-        </Menu.Item>
+          </Menu.Item>
+        )}
 
         <Menu.Item>
           <label>Filter by:</label>
@@ -243,18 +291,8 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
             </List.Item>
           </List>
         </Menu.Item>
-        <Menu.Item>
-          <Button
-            basic
-            color="red"
-            disabled
-            onClick={() => {
-              //
-            }}
-          >
-            Generate YT Playlist
-          </Button>
-        </Menu.Item>
+
+        {/* buttons */}
         <Menu.Item>
           <Button
             basic
@@ -266,7 +304,7 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
               saveAs(blob, "music_list.json");
             }}
           >
-            Generate Music List Report
+            Generate Music List (plain)
           </Button>
         </Menu.Item>
         <Menu.Item>
@@ -277,10 +315,24 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
               var blob = new Blob([JSON.stringify(animes)], {
                 type: "text/json",
               });
-              saveAs(blob, "backup.json");
+              saveAs(blob, "anime_backup.json");
             }}
           >
-            Generate Backup Report
+            Generate Anime Backup
+          </Button>
+        </Menu.Item>
+        <Menu.Item>
+          <Button
+            basic
+            color="red"
+            onClick={() => {
+              var blob = new Blob([JSON.stringify(links)], {
+                type: "text/json",
+              });
+              saveAs(blob, "links_backup.json");
+            }}
+          >
+            Generate Links Backup
           </Button>
         </Menu.Item>
       </Sidebar>

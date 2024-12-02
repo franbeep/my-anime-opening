@@ -12,6 +12,11 @@ const parseMusic = ({ text: item }) => {
     music,
     author,
     whole: parsedItem,
+    links: {
+      // providers
+      spotify: undefined,
+      youtube: undefined,
+    },
   };
 };
 

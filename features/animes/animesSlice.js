@@ -96,10 +96,13 @@ const animesSlice = createSlice({
       switch (action.payload.type) {
         case "set":
           state.error = true;
+          return;
         case "clear":
           state.error = false;
+          return;
         default:
           state.error = true;
+          return;
       }
     },
   },
@@ -119,7 +122,8 @@ const animesSlice = createSlice({
   },
 });
 
-export const { filterSet, sortingSet, loadBackup } = animesSlice.actions;
+export const { filterSet, sortingSet, loadBackup, errorSet } =
+  animesSlice.actions;
 
 export default animesSlice.reducer;
 

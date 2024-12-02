@@ -23,7 +23,6 @@ import {
   fetchAnimes,
   loadBackup,
   selectAllAnimesFilteredSorted,
-  updateAnimeDetail,
 } from "../features/animes/animesSlice";
 import AnimeCard from "../components/animes/animesCard";
 import DragFilesZone from "../components/dragFilesZone";
@@ -223,12 +222,10 @@ function Home() {
 
       <main>
         <SideBarControl
-          fetchOne={(anime) => {
+          fetchOne={(thunk) => {
             dispatchFetchStream({
               type: "stream/next",
-              payload: () => {
-                dispatch(updateAnimeDetail(anime.id));
-              },
+              payload: () => dispatch(thunk),
             });
           }}
           fetchReset={() => {
@@ -242,7 +239,6 @@ function Home() {
               zIndex: 9999,
               top: 0,
               right: 0,
-              position: "sticky",
               display: "flex",
             }}
           />

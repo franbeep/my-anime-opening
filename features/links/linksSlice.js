@@ -6,46 +6,82 @@ import {
 } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const apiPath = "/api/ytlink";
-
 const linksAdapater = createEntityAdapter({
   selectId: (link) => link.key,
+  sortComparer: (a, b) => {
+    return a.key.localeCompare(b.key);
+  },
 });
-const initialState = linksAdapater.getInitialState();
+const initialState = linksAdapater.getInitialState({
+  error: false,
+});
 
-export const fetchMusicLink = createAsyncThunk(
-  "links/fetchMusicLink",
-  async (whole) => {
+export const fetchYoutubeMusicLink = createAsyncThunk(
+  "links/fetchYoutubeMusicLink",
+  async (whole, { getState }) => {
+    const link = selectLinkById(getState(), whole);
+    const hasError = selectLinksError(getState());
+
+    if (!whole || hasError) return;
+
+    if (link) return link;
+
     return await axios
-      .get(apiPath, {
+      .get("/api/youtube", {
         params: {
           music: whole,
         },
       })
       .then((response) => {
-        //
         const [first] = response.data.result;
         return {
           key: whole,
           value: `https://www.youtube.com/watch?v=${first.videoId}`,
+          type: "youtube",
         };
       })
       .catch((error) => {
+        console.error(error);
         throw new Error("Failed fetching music link");
       });
   }
 );
 
+export const fetchSpotifyMusicLink = () => {
+  // TODO
+};
+
 const linksSlice = createSlice({
   name: "links",
   initialState,
-  reducers: {},
+  reducers: {
+    setLinksError(state, action) {
+      switch (action.payload.type) {
+        case "set":
+          state.error = true;
+          return;
+        case "clear":
+          state.error = false;
+          return;
+        default:
+          state.error = true;
+          return;
+      }
+    },
+  },
   extraReducers: {
-    [fetchMusicLink.fulfilled]: (state, action) => {
-      linksAdapater.addOne(state, action.payload);
+    [fetchYoutubeMusicLink.fulfilled]: (state, action) => {
+      if (action.payload) linksAdapater.addOne(state, action.payload);
+    },
+    [fetchYoutubeMusicLink.rejected]: (state) => {
+      state.error = true;
     },
   },
 });
+
+export const selectLinksError = (state) => state.links.error;
+
+export const { setLinksError } = linksSlice.actions;
 
 export default linksSlice.reducer;
 
@@ -55,11 +91,7 @@ export const {
   selectIds: selectLinkIds,
 } = linksAdapater.getSelectors((state) => state.links);
 
-export const selectLinkByIdOrNull = createSelector(selectLinkById, (link) => {
-  if (link === undefined) {
-    // TODO
-  } else {
-    // TODO
-  }
-  return null;
-});
+export const selectAllLinksFiltered = createSelector(
+  [selectAllLinks],
+  (links) => links
+);

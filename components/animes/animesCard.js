@@ -7,13 +7,18 @@ import {
   List,
   Visibility,
 } from "semantic-ui-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { selectLinkById } from "../../features/links/linksSlice";
-import { updateAnimeDetail } from "../../features/animes/animesSlice";
+import {
+  selectLinkById,
+  fetchYoutubeMusicLink,
+  fetchSpotifyMusicLink,
+} from "../../features/links/linksSlice";
 
 function MusicList({ processing, list, header }) {
+  const dispatch = useDispatch();
+
   if (list.length == 0)
     return (
       <>
@@ -53,19 +58,55 @@ function MusicList({ processing, list, header }) {
 
           return (
             <List.Item key={index}>
-              <List.Icon name="youtube" size="large" verticalAlign="middle" />
+              {!link && (
+                <>
+                  <List.Icon
+                    name="spotify"
+                    size="large"
+                    verticalAlign="middle"
+                    onClick={() => {
+                      dispatch(fetchSpotifyMusicLink(item.whole));
+                    }}
+                  />
+                  <List.Icon
+                    name="youtube"
+                    size="large"
+                    verticalAlign="middle"
+                    onClick={() => {
+                      dispatch(fetchYoutubeMusicLink(item.whole));
+                    }}
+                  />
+                </>
+              )}
+              {link?.type === "youtube" && (
+                <List.Icon
+                  name="youtube"
+                  color="red"
+                  size="large"
+                  verticalAlign="middle"
+                />
+              )}
+              {link?.type === "spotify" && (
+                <List.Icon
+                  name="spotify"
+                  color="green"
+                  size="large"
+                  verticalAlign="middle"
+                />
+              )}
+
               <List.Content>
                 <List.Header
                   as={link ? "a" : "span"}
-                  href={link || ""}
+                  href={link?.value || ""}
                   target="_blank"
                 >
                   {item.music}
                   {/* {link !== undefined ? (
-                    ""
-                  ) : (
-                    <i className="spinner loading icon"></i>
-                  )} */}
+                  ""
+                ) : (
+                  <i className="spinner loading icon"></i>
+                )} */}
                 </List.Header>
               </List.Content>
             </List.Item>
@@ -110,7 +151,7 @@ const getStatusTagText = (status) => {
   }
 };
 
-function AnimeCard({ anime, fetchDetails }) {
+function AnimeCard({ anime }) {
   const handleOnScreen = () => {};
 
   return (

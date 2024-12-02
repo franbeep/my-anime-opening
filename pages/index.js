@@ -238,7 +238,13 @@ function Home() {
           <GithubCorner
             size="140"
             href="https://github.com/franbeep/my-anime-opening"
-            style={{ zIndex: "100" }}
+            style={{
+              zIndex: 9999,
+              top: 0,
+              right: 0,
+              position: "sticky",
+              display: "flex",
+            }}
           />
           {containerList.map((child, index) => {
             return index == actualIndex ? (
@@ -249,7 +255,6 @@ function Home() {
               ""
             );
           })}
-          <div style={{ height: "100vh" }}></div>
         </SideBarControl>
       </main>
       <Dimmer active={Boolean(loadingStatus)}>

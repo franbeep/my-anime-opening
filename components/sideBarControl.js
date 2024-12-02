@@ -263,10 +263,24 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
               var blob = new Blob([JSON.stringify(report)], {
                 type: "text/json",
               });
-              saveAs(blob, "Music List.json");
+              saveAs(blob, "music_list.json");
             }}
           >
-            Generate Basic Report
+            Generate Music List Report
+          </Button>
+        </Menu.Item>
+        <Menu.Item>
+          <Button
+            basic
+            color="blue"
+            onClick={() => {
+              var blob = new Blob([JSON.stringify(animes)], {
+                type: "text/json",
+              });
+              saveAs(blob, "backup.json");
+            }}
+          >
+            Generate Backup Report
           </Button>
         </Menu.Item>
       </Sidebar>

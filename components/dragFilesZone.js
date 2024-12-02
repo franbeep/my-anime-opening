@@ -7,20 +7,19 @@ function DragFilesZone({ callback }) {
     acceptedFiles.forEach((file) => {
       const reader = new FileReader();
 
-      reader.onabort = () => console.log("File reading was aborted");
-      reader.onerror = () => console.log("File reading has failed");
+      reader.onabort = () => console.warn("File reading was aborted");
+      reader.onerror = () => console.error("File reading has failed");
       reader.onload = () => {
         callback(reader.result);
       };
 
-      reader.readAsArrayBuffer(file);
+      reader.readAsText(file);
     });
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     maxFiles: 1,
-    accept: "text/xml",
   });
 
   // TODO: whole Segment as a dropzone

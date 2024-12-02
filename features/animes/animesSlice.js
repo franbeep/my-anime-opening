@@ -66,6 +66,9 @@ const animesSlice = createSlice({
   name: "animes",
   initialState,
   reducers: {
+    loadBackup(state, action) {
+      animesAdapter.addMany(state, action.payload.animes);
+    },
     filterSet(state, action) {
       const filter = action.payload.filter;
       if (filter === "all") {
@@ -116,7 +119,7 @@ const animesSlice = createSlice({
   },
 });
 
-export const { filterSet, sortingSet } = animesSlice.actions;
+export const { filterSet, sortingSet, loadBackup } = animesSlice.actions;
 
 export default animesSlice.reducer;
 

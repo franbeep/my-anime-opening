@@ -15,28 +15,21 @@ import {
   Divider,
 } from "semantic-ui-react";
 import GithubCorner from "react-github-corner";
-import next from "next"; // TODO: Review NextJS components
 import { Subject, of } from "rxjs";
 import { concatMap, delay } from "rxjs/operators";
-import { saveAs } from "file-saver";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
   fetchAnimes,
+  loadBackup,
   selectAllAnimesFilteredSorted,
   updateAnimeDetail,
-  selectAllAnimeLinks,
-  selectAllAnimes,
 } from "../features/animes/animesSlice";
 import AnimeCard from "../components/animes/animesCard";
 import DragFilesZone from "../components/dragFilesZone";
 import SideBarControl from "../components/sideBarControl";
 import PaginationWrapper from "../components/paginationWrapper";
 import { sleep } from "../lib/utils";
-
-const evalExportFile = (file) => {
-  console.log(file);
-};
 
 // TODO: Added option to add anime through xml with or divider
 function Home() {
@@ -79,6 +72,19 @@ function Home() {
   }, 0);
 
   const dispatch = useDispatch();
+
+  const evalExportFile = useCallback(
+    (text) => {
+      try {
+        const animes = JSON.parse(text);
+        dispatch(loadBackup({ animes }));
+        dispatchIndex({ type: "next" });
+      } catch (err) {
+        console.error("Failed to load backup:", err);
+      }
+    },
+    [dispatch, dispatchIndex]
+  );
 
   useEffect(() => {
     dispatchFetchStream({ type: "stream/reset" });

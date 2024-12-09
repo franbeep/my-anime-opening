@@ -44,7 +44,7 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
 
   const dispatch = useDispatch();
 
-  const fetchTYLinks = async () => setFetchingLinks(true);
+  const fetchTYLinks = () => setFetchingLinks(true);
 
   useEffect(() => {
     if (hasLinksError) {
@@ -84,8 +84,20 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
       return;
     }
 
-    linksStream.next(animes);
-  }, [fetchingLinks, animes, detailedCount, totalCount]);
+    const allLinksDict = links.reduce((acc, curr) => {
+      acc[curr.key] = curr;
+      return acc;
+    }, {});
+
+    const notFetchedAnimes = animes.filter((anime) => {
+      const themes = [...anime.opening_themes, ...anime.ending_themes];
+      return themes.some((theme) => !allLinksDict[theme.whole]);
+    });
+
+    console.info(`preparing ${notFetchedAnimes.length} animes ...`);
+
+    linksStream.next(notFetchedAnimes);
+  }, [fetchingLinks, animes, links, detailedCount, totalCount]);
 
   useEffect(() => {
     fetchReset();

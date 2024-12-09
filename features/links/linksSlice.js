@@ -26,6 +26,8 @@ export const fetchYoutubeMusicLink = createAsyncThunk(
 
     if (link) return link;
 
+    console.info(`fetching song ${whole} ...`);
+
     return await axios
       .get("/api/youtube", {
         params: {

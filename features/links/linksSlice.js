@@ -55,6 +55,9 @@ const linksSlice = createSlice({
   name: "links",
   initialState,
   reducers: {
+    loadLinksBackup(state, action) {
+      linksAdapater.addMany(state, action.payload.links);
+    },
     setLinksError(state, action) {
       switch (action.payload.type) {
         case "set":
@@ -81,7 +84,7 @@ const linksSlice = createSlice({
 
 export const selectLinksError = (state) => state.links.error;
 
-export const { setLinksError } = linksSlice.actions;
+export const { setLinksError, loadLinksBackup } = linksSlice.actions;
 
 export default linksSlice.reducer;
 

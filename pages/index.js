@@ -21,9 +21,10 @@ import { useDispatch, useSelector } from "react-redux";
 
 import {
   fetchAnimes,
-  loadBackup,
+  loadAnimesBackup,
   selectAllAnimesFilteredSorted,
 } from "../features/animes/animesSlice";
+import { loadLinksBackup } from "../features/links/linksSlice";
 import AnimeCard from "../components/animes/animesCard";
 import DragFilesZone from "../components/dragFilesZone";
 import SideBarControl from "../components/sideBarControl";
@@ -75,8 +76,10 @@ function Home() {
   const evalExportFile = useCallback(
     (text) => {
       try {
-        const animes = JSON.parse(text);
-        dispatch(loadBackup({ animes }));
+        const { animes, links } = JSON.parse(text);
+        if (!animes || !links) return;
+        dispatch(loadAnimesBackup({ animes }));
+        dispatch(loadLinksBackup({ links }));
         dispatchIndex({ type: "next" });
       } catch (err) {
         console.error("Failed to load backup:", err);

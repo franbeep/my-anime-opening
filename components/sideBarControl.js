@@ -296,7 +296,7 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
         <Menu.Item>
           <Button
             basic
-            color="blue"
+            color="teal"
             onClick={() => {
               var blob = new Blob([JSON.stringify(report)], {
                 type: "text/json",
@@ -310,29 +310,20 @@ function SideBarControl({ fetchOne, fetchReset, children }) {
         <Menu.Item>
           <Button
             basic
-            color="blue"
+            color="teal"
             onClick={() => {
-              var blob = new Blob([JSON.stringify(animes)], {
+              const backup = {
+                animes,
+                links,
+              };
+
+              var blob = new Blob([JSON.stringify(backup)], {
                 type: "text/json",
               });
-              saveAs(blob, "anime_backup.json");
+              saveAs(blob, "backup.json");
             }}
           >
-            Generate Anime Backup
-          </Button>
-        </Menu.Item>
-        <Menu.Item>
-          <Button
-            basic
-            color="red"
-            onClick={() => {
-              var blob = new Blob([JSON.stringify(links)], {
-                type: "text/json",
-              });
-              saveAs(blob, "links_backup.json");
-            }}
-          >
-            Generate Links Backup
+            Generate Backup
           </Button>
         </Menu.Item>
       </Sidebar>

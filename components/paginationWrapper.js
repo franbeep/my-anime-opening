@@ -85,6 +85,8 @@ function PaginationWrapper({ children }) {
           }}
           prevItem={{ content: <Icon name="angle left" />, icon: true }}
           nextItem={{ content: <Icon name="angle right" />, icon: true }}
+          boundaryRange={3}
+          siblingRange={5}
         />
       </Grid.Column>
     </Grid>

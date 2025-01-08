@@ -14,19 +14,39 @@ const linksAdapater = createEntityAdapter({
 });
 const initialState = linksAdapater.getInitialState({
   error: false,
+  linksWithError: {},
 });
+
+/**
+ * @param {string} str
+ * @returns
+ */
+const cleanWholeUtil = (str) =>
+  str.replaceAll(/\(.+?\)/gi, "").replaceAll("  ", " ");
 
 export const fetchYoutubeMusicLink = createAsyncThunk(
   "links/fetchYoutubeMusicLink",
   async (whole, { getState }) => {
-    const link = selectLinkById(getState(), whole);
+    const link = selectLinkById(getState(), cleanWholeUtil(whole).trim());
     const hasError = selectLinksError(getState());
+    const isLinkMissing = selectIsLinkMissing(getState(), whole);
+    const allMissingLinks = selectAllMissingLinks(getState());
 
-    if (!whole || hasError) return;
+    if (isLinkMissing) {
+      console.info(`[404-2] ${whole} was already tried and failed...`);
+      return;
+    }
+
+    if (hasError) {
+      console.info(">> Not found songs:", allMissingLinks);
+      return;
+    }
+
+    if (!whole) return;
 
     if (link) return link;
 
-    console.info(`fetching song ${whole} ...`);
+    console.info(`[100] fetching song "${whole}" ...`);
 
     return await axios
       .get("/api/youtube", {
@@ -36,6 +56,15 @@ export const fetchYoutubeMusicLink = createAsyncThunk(
       })
       .then((response) => {
         const [first] = response.data.result;
+
+        if (!first) {
+          console.info(`[404] {first} missing for "${whole}"`);
+          return {
+            missingKey: whole,
+          };
+        }
+        console.info(`[200] song "${whole}" was found!`);
+
         return {
           key: whole,
           value: `https://www.youtube.com/watch?v=${first.videoId}`,
@@ -76,7 +105,9 @@ const linksSlice = createSlice({
   },
   extraReducers: {
     [fetchYoutubeMusicLink.fulfilled]: (state, action) => {
-      if (action.payload) linksAdapater.addOne(state, action.payload);
+      if (action.payload?.value) linksAdapater.addOne(state, action.payload);
+      if (action.payload)
+        state.linksWithError[action.payload.missingKey] = true;
     },
     [fetchYoutubeMusicLink.rejected]: (state) => {
       state.error = true;
@@ -85,6 +116,10 @@ const linksSlice = createSlice({
 });
 
 export const selectLinksError = (state) => state.links.error;
+
+const selectIsLinkMissing = (state, whole) => state.links.linksWithError[whole];
+
+const selectAllMissingLinks = (state) => state.links.linksWithError;
 
 export const { setLinksError, loadLinksBackup } = linksSlice.actions;
 
